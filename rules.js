@@ -6,13 +6,14 @@ var yahoo_url = "http://download.finance.yahoo.com/d/quotes.csv";
 var querystring = require('querystring');
 var request = require('request');
 var parseHandler = require('./parse');
+
+var needUpdate;
 //modulized
 module.exports = {
 
-       compareRules: function(symbols,localRules,start,stop){
-
-       
-        //get all symbols
+       compareRules: function(symbols,localRules,callback){
+        needUpdate = false;
+               //get all symbols
         var symbol_string='';
         if(symbols.length<=200&&symbols.length!=0){
 
@@ -48,14 +49,15 @@ module.exports = {
                                         if(v.length>0){
                                           for(c in v){
                                             if(v[c].ruleOperator==">"||v[c].ruleOperator=="<"){
-                                              //parseHandler.requestPush(v[c].stockSymbol+' '+v[c].ruleOperator+' '+v[c].ruleTarget,"c"+v[c].objectId,v[c]);
+                                              parseHandler.requestPush(v[c].stockSymbol+' '+v[c].ruleOperator+' '+v[c].ruleTarget,"c"+v[c].objectId,v[c]);
                                               console.log('Price alert: '+v[c].stockSymbol+' price '+v[c].ruleOperator+' '+v[c].ruleTarget+" sending to c"+v[c].objectId);
                                             }
                                             if(v[c].ruleOperator=="+"||v[c].ruleOperator=="-"){
-                                              //parseHandler.requestPush(v[c].stockSymbol+' '+v[c].ruleOperator+' '+v[c].ruleTarget+"%","c"+v[c].objectId,v[c]);
+                                              parseHandler.requestPush(v[c].stockSymbol+' '+v[c].ruleOperator+' '+v[c].ruleTarget+"%","c"+v[c].objectId,v[c]);
                                               console.log('Price alert: '+v[c].stockSymbol+' day change '+v[c].ruleOperator+' '+v[c].ruleTarget+"% sending to "+"c"+v[c].objectId);
                                             }
                                             parseHandler.deactivate(v[c].objectId);
+                                            needUpdate = true;
                                           }
                                         }
                                           
@@ -67,15 +69,14 @@ module.exports = {
                       console.log("parse body crashed");
                       console.log(err);
                     }
-                     
+                     callback(needUpdate);
               });
       }else if(symbols.length>200){
-        module.exports.compareRules(symbols.slice(0,200),localRules,start,stop);
-        module.exports.compareRules(symbols.slice(200,symbols.length),localRules,start,stop);
+        module.exports.compareRules(symbols.slice(0,200),localRules,callback);
+        module.exports.compareRules(symbols.slice(200,symbols.length),localRules,callback);
       }
       //update localrules
-      stop;
-      start;
+      
     },//compareRules
 
 

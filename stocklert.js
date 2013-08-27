@@ -39,8 +39,8 @@ app.get('/users', user.list);
 
 
 app.get('/update', function(req,res){
-  stopUpdating;
-  startUpdating; 
+  stopUpdating();
+  startUpdating(); 
   res.end();
 });
 
@@ -62,7 +62,21 @@ var cycle = 0;
 
 function recursive(){
 
-  ruleUtil.compareRules(monitoringSymbols,monitoringStocks,startUpdating,stopUpdating);
+  ruleUtil.compareRules(monitoringSymbols,monitoringStocks, function(t){
+      
+      if(t){
+      console.log('undate after deactivate');
+      parseHandler.fetchAllActiveRules(function(r){    
+        monitoringStocks = r;
+
+          parseHandler.fetchAllStocks(function(s){ 
+          monitoringSymbols = s;
+        },0);
+
+    },0);
+    }//if
+  });
+
   lastUpdate = new Date();
   console.log("update stock price in cycle "+cycle+ ' at '+lastUpdate);
   cycle+=1;
@@ -70,7 +84,7 @@ function recursive(){
 };
 
 //start job
-var startUpdating= function (){
+function startUpdating(){
   console.log("start loop"); 
   //get all active rules 
   parseHandler.fetchAllActiveRules(function(r){    
@@ -86,7 +100,7 @@ var startUpdating= function (){
 }
 
 //stop job
-var stopUpdating = function (){
+function stopUpdating(){
   console.log("stop loop");
   clearTimeout(job);
 }
