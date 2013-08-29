@@ -8,7 +8,11 @@ var MASTER_KEY = "fa4d6kTmeMR4l2I9G8bQDHgG62BFBqfbtrXiN3ES";
 var Parse = require('node-parse-api').Parse;
 var parseApp = new Parse(APP_ID, MASTER_KEY);
 
-
+//for instances
+var _10days = 0;
+var _30days = 0;
+var _60days = 0;
+var _90days = 0;
 
 //modulized
 module.exports = {
@@ -95,7 +99,7 @@ module.exports = {
                   "X-Parse-REST-API-Key": REST_API_KEY,
                   "Content-Type": "application/json"
               },
-              json:{"channels":[channel], "type":"ios","data":{"alert":msg,"sendingDate":sendingtime,"symbol":stock.stockSymbol,"type":stock.ruleType,"operator":stock.ruleOperator,"target":stock.ruleTarget,"objectID":stock.objectId}}
+              json:{"channels":[channel], "type":"ios","data":{"alert":msg,"sound": "cheering.caf","sendingDate":sendingtime,"symbol":stock.stockSymbol,"type":stock.ruleType,"operator":stock.ruleOperator,"target":stock.ruleTarget,"objectID":stock.objectId}}
             },
             function(e,r,body){
             console.log('msg sent: ' + msg);
@@ -109,5 +113,54 @@ module.exports = {
           parseApp.update('AlertRule', id, { alertStatus: 'inactive' }, function (err, response) {
          });
          },//deactivate
+
+     inspectActiveness: function (numberToSkip){
+
+      //tempArray = (typeof tempArray === "undefined") ? [] : tempArray;
+
+          param = encodeURIComponent('where={"alertStatus":"active"}');
+          request.get({url:'https://api.parse.com/1/classes/AlertRule?order=-createdAt&limit=1000&skip='+numberToSkip+'&'+param, 
+              headers:{
+                  "X-Parse-Application-Id":APP_ID ,
+                      "X-Parse-REST-API-Key": REST_API_KEY,
+                      "Content-Type": "application/json"
+                  }
+        }, function (e, r, body) {
+
+          body=JSON.parse(body);
+                 
+            if(body.results!=undefined){
+
+               
+               for(r in body.results){ 
+                      _date = new Date(body.results[r].createdAt) 
+                      todate = new Date();                
+                      inactive_days=Math.round((todate.getTime()-_date.getTime())/(24*60*60*1000));
+
+                      if(inactive_days<=10)
+                      _10days+=1;
+                      else if(inactive_days<=30)
+                      _30days+=1;
+                      else if(inactive_days<=60)
+                      _60days+=1;
+                      else{
+                      _90days+=1; 
+                      //module.exports.deactivate(body.results[r].objectId);
+
+                    } 
+                }
+                
+
+                if(body.results.length==1000){
+                      console.log('need next round');
+                      module.exports.inspectActiveness(numberToSkip+1000);
+                  }else{
+                      console.log('10 days: '+_10days+'  30 days: '+_30days+"  60 days: "+_60days+"  >90days: "+_90days);
+                    }
+            }//if
+      });
+
+
+  },//fetchAllStocks
 
 }//end of module

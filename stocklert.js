@@ -1,9 +1,10 @@
 
+
+
 //parse handle
 var parseHandler = require('./parse');
 var ruleUtil = require('./rules');
-var request = require('request');
-var querystring = require('querystring');
+
 /**
  * Module dependencies.
  */
@@ -46,6 +47,15 @@ app.get('/update', function(req,res){
 
 app.get('/test', function(req,res){
  
+  parseHandler.inspectActiveness(0);
+
+});
+
+app.get('/push', function(req,res){
+ 
+  _stock = {"alert":"test","stockSymbol":"yy","ruleType":"price","ruleOperator":">",'ruleTarget':'8','objectId':'haha'};       
+  parseHandler.requestPush('testing','ccRsTTTq4Kl',_stock);
+
 });
 
 
